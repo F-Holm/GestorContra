@@ -6,6 +6,7 @@ on:
 
 jobs:
   test:
+    if: github.event.pull_request.draft == false
     name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
