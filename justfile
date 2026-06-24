@@ -11,12 +11,11 @@ build-install-ci: config build test install package
 config:
     cmake --preset release
 
-config-dev coverage="0" lint="0" asan="0" valgrind="0":
-    cmake --preset debug \
+config-dev coverage="0" lint="0" *analizadores:
+    cmake --preset debug --warn-unused-vars \
           -DENABLE_COVERAGE={{ if coverage == "1" { "ON" } else { "OFF" } }} \
           -DENABLE_LINT={{ if lint == "1" { "ON" } else { "OFF" } }} \
-          -DENABLE_ASAN={{ if asan == "1" { "ON" } else { "OFF" } }} \
-          -DENABLE_VALGRIND={{ if valgrind == "1" { "ON" } else { "OFF" } }}
+          {{ if analizadores == "" { "" } else { "-DENABLE_" + replace(analizadores, " ", "=ON -DENABLE_") + "=ON" } }}
 
 build:
     cmake --build --preset build-release
