@@ -75,11 +75,11 @@ When running `just config-dev`, you can enable code coverage, static analysis (l
 
 ### Usage
 ```bash
-just config-dev [coverage] [lint] [ANALIZADORES...]
+just config-dev [coverage] [lint] [ANALYZERS...]
 ```
 - `coverage`: `1` to enable, `0` to disable (default: `0`).
 - `lint`: `1` to enable, `0` to disable (default: `0`).
-- `ANALIZADORES...`: A space-separated list of analyzers in **UPPERCASE** (can receive 0, 1, or multiple tools).
+- `ANALYZERS...`: A space-separated list of analyzers in **UPPERCASE** (can receive 0, 1, or multiple tools).
 
 ### Available Analyzers
 
