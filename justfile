@@ -18,16 +18,16 @@ config-dev coverage="0" lint="0" *analyzers:
           {{ if analyzers == "" { "" } else { "-DENABLE_" + replace(analyzers, " ", "=ON -DENABLE_") + "=ON" } }}
 
 build:
-    cmake --build --preset build-release
+    cmake --build --preset build-release --parallel {{ num_cpus() }}
 
 build-dev:
-    cmake --build --preset build-debug
+    cmake --build --preset build-debug --parallel {{ num_cpus() }}
 
 test:
-    ctest --preset test-release
+    ctest --preset test-release -j{{ num_cpus() }}
 
 test-dev:
-    ctest --preset test-debug
+    ctest --preset test-debug -j{{ num_cpus() }}
 
 install:
     cmake --install --preset install-release
