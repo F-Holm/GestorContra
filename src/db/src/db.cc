@@ -2,64 +2,7 @@
 
 #include <sqlite3.h>
 
-#include <array>
-#include <cstddef>
-#include <cstring>
-
-namespace {
-
-class Statement {
- public:
-  Statement(sqlite3* db, std::string_view sql) : stmt_(nullptr) {
-    sqlite3_prepare_v2(db, sql.data(), static_cast<int>(sql.size()), &stmt_,
-                       nullptr);
-  }
-
-  ~Statement() {
-    sqlite3_finalize(stmt_);
-  }
-
-  Statement(const Statement&) = delete;
-  Statement& operator=(const Statement&) = delete;
-
-  bool IsValid() const noexcept {
-    return stmt_ != nullptr;
-  }
-
-  void BindInt64(int index, std::int64_t value) {
-    sqlite3_bind_int64(stmt_, index, value);
-  }
-
-  template <std::size_t N>
-  void BindBlob(int index, const std::array<std::byte, N>& value) {
-    sqlite3_bind_blob(stmt_, index, value.data(), static_cast<int>(N),
-                      SQLITE_STATIC);
-  }
-
-  int Step() {
-    return sqlite3_step(stmt_);
-  }
-
-  std::int64_t ColumnInt64(int index) const {
-    return sqlite3_column_int64(stmt_, index);
-  }
-
-  template <std::size_t N>
-  bool ColumnBlob(int index, std::array<std::byte, N>& out) const {
-    const void* blob = sqlite3_column_blob(stmt_, index);
-    const int size = sqlite3_column_bytes(stmt_, index);
-    if (blob == nullptr || static_cast<std::size_t>(size) != N) {
-      return false;
-    }
-    std::memcpy(out.data(), blob, N);
-    return true;
-  }
-
- private:
-  sqlite3_stmt* stmt_;
-};
-
-}  // namespace
+#include "db/statement.h"
 
 DB::DB() noexcept : db_(nullptr) {
 }
