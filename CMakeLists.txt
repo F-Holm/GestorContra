@@ -26,6 +26,7 @@ include(CppCheck)
 include(CTest)
 include(Instrumentation)
 include(Rust)
+include(SQLite)
 include(Testing)
 
 add_subdirectory(src)
