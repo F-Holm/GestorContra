@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "crypto/crypto.h"
 #include "types/account_binary.h"
 #include "types/account_size.h"
 
@@ -34,12 +35,26 @@ TEST(AccountIndexTest, ConstructorCopiesDescriptionCorrectly) {
   for (size_t i = 0; i < AccountSize::kDescription; ++i) {
     binary.description[i] = static_cast<std::byte>(i + 1);
   }
+  for (size_t i = 0; i < Crypto::Size::kIv; ++i) {
+    binary.iv_description[i] = static_cast<std::byte>(i + 1);
+  }
+  for (size_t i = 0; i < Crypto::Size::kTag; ++i) {
+    binary.tag_description[i] = static_cast<std::byte>(i + 1);
+  }
 
   AccountIndex index(binary);
 
   EXPECT_EQ(index.position, -1);
   for (size_t i = 0; i < AccountSize::kDescription; ++i) {
     EXPECT_EQ(index.description[i], static_cast<std::byte>(i + 1))
+        << "Mismatch at index " << i;
+  }
+  for (size_t i = 0; i < Crypto::Size::kIv; ++i) {
+    EXPECT_EQ(index.iv_description[i], static_cast<std::byte>(i + 1))
+        << "Mismatch at index " << i;
+  }
+  for (size_t i = 0; i < Crypto::Size::kTag; ++i) {
+    EXPECT_EQ(index.tag_description[i], static_cast<std::byte>(i + 1))
         << "Mismatch at index " << i;
   }
 }
