@@ -1,16 +1,16 @@
 # Build Directory
 build/
 install/
+package/
+
+# Docs
 docs/
+Doxyfile_temp
 
-# Crypto
-crypto/Cargo.lock
-crypto/target/
-crypto/include/
-
-# GUI
-gui/build
-gui/install
+# Rust
+Cargo.lock
+target/
+rust_*.h
 
 # Visual Studio
 .vs/

@@ -1,19 +1,46 @@
 # Password Manager
 
-## Dependencies
+## Build and Install
 
-- `clang`
-- `cmake`
-- `ninja`
+Run the following command from the project root to build and install the application:
+
+Note: Ensure all [Build Dependencies](#build-dependencies) are installed before running this command.
+
+```bash
+just build-install
+```
+
+## Build Dependencies
+
+- `Clang`
+- `CMake`
+- `Ninja-Build`
+- `Just`
+- `Rustup`
 
 ---
 
 ## Dev Dependencies
 
-- [Dockerfile](.devcontainer/Dockerfile)
-- `Cargo`
-- `Cargo fmt`
-- `Cargo Clippy`
+- `Clang`
+- `Clangd`
+- `LLDB`
+- `LLD`
+- `LLVM`
+- `Clang-Format`
+- `Clang-Tidy`
+- `CMake`
+- `Ninja-Build`
+- `Cppcheck`
+- `Ccache`
+- `Doxygen`
+- `Graphviz`
+- `Valgrind`
+- `lcov`
+- `Just`
+- `Rustup`
+- `Rustfmt`
+- `Rust Clippy`
 
 ---
 
@@ -21,13 +48,17 @@
 
 | Command | Description |
 | :--- | :--- |
-| `just build-install` | Full pipeline: Configures, builds, and installs the **Release** version. |
+| `just build-install` | Full pipeline without tests: Configures, builds, and installs the **Release** version. |
+| `just build-install-ci` | Full pipeline: Configures, builds, test, and installs the **Release** version. |
 | `just config` | Configures the project with the **Release** preset. |
 | `just config-dev` | Configures the project with the **Debug** preset. |
+| `just config-dev [FLAGS...]` | Configures the project with the **Debug** preset and optional instrumentation. |
 | `just build` | Compiles the project in **Release** mode. |
 | `just build-dev` | Compiles the project in **Debug** mode. |
-| `just install` | Installs the **Release** binaries. |
-| `just install-dev` | Installs the **Debug** binaries. |
+| `just install` | Installs the **Release** binaries in the `install` folder. |
+| `just install-dev` | Installs the **Debug** binaries in the `install` folder. |
+| `just package` | Generates the **Release** installers in the `package` folder. |
+| `just package-dev` | Generates the **Debug** installers in the `package` folder. |
 | `just clean` | Removes `build`, `install`, `docs`, and Rust target folders. |
 | `just test` | Runs the test suite in **Release** mode. |
 | `just test-dev` | Runs the test suite in **Debug** mode. |
@@ -40,11 +71,41 @@
 
 ## Advanced Debugging Flags
 
-When running `just config-dev`, you can enable specific analysis tools by passing parameters (`1` to enable, `0` to disable).
+When running `just config-dev`, you can enable code coverage, static analysis (linting), and multiple dynamic analysis tools simultaneously.
 
-Order: `coverage` `lint` `asan` `valgrind`
-
-**Example: lint & asan**
+### Usage
 ```bash
-just config-dev 0 1 1 0
+just config-dev [FLAGS...]
+```
+- `FLAGS...`: A space-separated list of flags in **UPPERCASE** (can receive 0, 1, or multiple). Each flag `X` maps directly to CMake's `-DENABLE_X=ON`; a flag that isn't passed stays at its default (`OFF`).
+
+### Available Flags
+
+| Category | Flags |
+| :--- | :--- |
+| Instrumentation | `LINT`, `COVERAGE` |
+| Sanitizer | `ASAN` (AddressSanitizer) |
+| Valgrind Tools | `MEMCHECK`, `HELGRIND`, `DRD`, `MASSIF`, `CACHEGRIND`, `CALLGRIND`, `DHAT`, `LACKEY`, `NULGRIND` |
+
+> ⚠️ **Important:**
+> - If any Valgrind tool is enabled, individual CTest targets are registered automatically for each tool under the same test executable.
+> - Passing an invalid or misspelled flag name will trigger a Warning during the CMake configuration step.
+> - Valgrand tools are incompatible with ASan.
+> - Flags aren't reset by omission on an existing build directory: once enabled, a flag stays `ON` in the CMake cache until you explicitly reconfigure with a fresh build directory or pass it again some other way.
+
+### Examples
+
+**1. Default configuration (No analysis):**
+```bash
+just config-dev
+```
+
+**2. Enable Linting and AddressSanitizer:**
+```bash
+just config-dev LINT ASAN
+```
+
+**3. Run a comprehensive Valgrind Suite (Memcheck + Helgrind) with Coverage enabled:**
+```bash
+just config-dev COVERAGE MEMCHECK HELGRIND
 ```
