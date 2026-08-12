@@ -23,7 +23,7 @@ class DB {
 
   bool Open(std::string_view path);
   void Close();
-  bool IsOpen() const noexcept;
+  [[nodiscard]] bool IsOpen() const noexcept;
 
   bool AddAccount(const AccountBinary& account);
   std::optional<AccountBinary> GetAccount(std::int64_t position);
@@ -35,7 +35,7 @@ class DB {
   bool Compact();
 
  private:
-  sqlite3* db_;
+  sqlite3* db_ = nullptr;
 
   bool CreateSchema();
   bool Execute(std::string_view sql);

@@ -2,10 +2,11 @@
 
 #include <sqlite3.h>
 
+#include <string>
+
 #include "db/statement.h"
 
-DB::DB() noexcept : db_(nullptr) {
-}
+DB::DB() noexcept = default;
 
 DB::~DB() {
   Close();
@@ -14,7 +15,8 @@ DB::~DB() {
 bool DB::Open(std::string_view path) {
   Close();
 
-  if (sqlite3_open(path.data(), &db_) != SQLITE_OK) {
+  const std::string path_str(path);
+  if (sqlite3_open(path_str.c_str(), &db_) != SQLITE_OK) {
     Close();
     return false;
   }
@@ -42,7 +44,9 @@ bool DB::IsOpen() const noexcept {
 }
 
 bool DB::Execute(std::string_view sql) {
-  return sqlite3_exec(db_, sql.data(), nullptr, nullptr, nullptr) == SQLITE_OK;
+  const std::string sql_str(sql);
+  return sqlite3_exec(db_, sql_str.c_str(), nullptr, nullptr, nullptr) ==
+         SQLITE_OK;
 }
 
 bool DB::CreateSchema() {

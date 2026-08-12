@@ -17,7 +17,7 @@ class Statement {
   Statement(const Statement&) = delete;
   Statement& operator=(const Statement&) = delete;
 
-  bool IsValid() const noexcept;
+  [[nodiscard]] bool IsValid() const noexcept;
 
   void BindInt64(int index, std::int64_t value);
 
@@ -28,7 +28,7 @@ class Statement {
 
   int Step();
 
-  std::int64_t ColumnInt64(int index) const;
+  [[nodiscard]] std::int64_t ColumnInt64(int index) const;
 
   template <std::size_t N>
   bool ColumnBlob(int index, std::array<std::byte, N>& out) const {
@@ -41,9 +41,9 @@ class Statement {
   }
 
  private:
-  sqlite3_stmt* stmt_;
+  sqlite3_stmt* stmt_ = nullptr;
 
   void BindBlobRaw(int index, const void* data, int size);
-  const void* ColumnBlobData(int index) const;
-  int ColumnBytes(int index) const;
+  [[nodiscard]] const void* ColumnBlobData(int index) const;
+  [[nodiscard]] int ColumnBytes(int index) const;
 };

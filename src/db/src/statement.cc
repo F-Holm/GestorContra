@@ -2,7 +2,7 @@
 
 #include <sqlite3.h>
 
-Statement::Statement(sqlite3* db, std::string_view sql) : stmt_(nullptr) {
+Statement::Statement(sqlite3* db, std::string_view sql) {
   sqlite3_prepare_v2(db, sql.data(), static_cast<int>(sql.size()), &stmt_,
                      nullptr);
 }
