@@ -41,51 +41,50 @@ package:
 package-dev:
     cmake --package --preset package-debug
 
+[unix]
 clean:
-    @echo "Cleaning project files..."  
-    {{ if os() == "windows" { \
-        "powershell -Command \"Get-Item " + files_to_clean + " -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force\"" \
-    } else { \
-        "rm -rf " + files_to_clean \
-    } }}
+    @echo "Cleaning project files..."
+    rm -rf {{ files_to_clean }}
+
+[windows]
+clean:
+    @echo "Cleaning project files..."
+    powershell -Command "Get-Item {{ files_to_clean }} -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force"
 
 format: format-cpp format-rust
     @echo "All the code has been formated!"
 
+[unix]
 format-cpp:
     @echo "Formating C++ in: src tests..."
-    {{ if os() == "windows" { \
-        "powershell -Command \"foreach ($dir in 'src tests'.Split(' ')) { Get-ChildItem -Path ./$dir -Include *.c,*.cpp,*.c++,*.h,*.hpp,*.hh,*.cc -Recurse -ErrorAction SilentlyContinue | ForEach-Object { clang-format -i $_.FullName } }\"" \
-    } else { \
-        "find src tests -type f -regextype posix-extended -regex '.*\\.(c|cpp|c\\+\\+|h|hpp|hh|cc)$' -exec clang-format -i {} +" \
-    } }}
+    find src tests -type f -regextype posix-extended -regex '.*\.(c|cpp|c\+\+|h|hpp|hh|cc)$' -exec clang-format -i {} +
 
+[windows]
+format-cpp:
+    @echo "Formating C++ in: src tests..."
+    powershell -Command "foreach ($dir in 'src tests'.Split(' ')) { Get-ChildItem -Path ./$dir -Include *.c,*.cpp,*.c++,*.h,*.hpp,*.hh,*.cc -Recurse -ErrorAction SilentlyContinue | ForEach-Object { clang-format -i $_.FullName } }"
+
+[unix]
 format-rust:
     @echo "Formating Rust projects in src/rust_*..."
-    {{ if os() == "windows" { \
-        "powershell -Command \"Get-ChildItem -Path ./src/rust_* -Directory | ForEach-Object { cd $_.FullName; cargo fmt; cd ..\\.. }\"" \
-    } else { \
-        "for dir in src/rust_*; do [ -d \"$dir\" ] && context=$(pwd) && cd \"$dir\" && cargo fmt && cd \"$context\"; done" \
-    } }}
+    for dir in src/rust_*; do [ -d "$dir" ] && context=$(pwd) && cd "$dir" && cargo fmt && cd "$context"; done
 
+[windows]
+format-rust:
+    @echo "Formating Rust projects in src/rust_*..."
+    powershell -Command "Get-ChildItem -Path ./src/rust_* -Directory | ForEach-Object { cd $_.FullName; cargo fmt; cd ..\.. }"
+
+[unix]
 docs:
     @echo "Verifing tools..."
-    {{ if os() == "windows" { \
-        "where doxygen >$null 2>&1 || (echo Error: Doxygen not found && exit 1)" \
-    } else { \
-        "command -v doxygen >/dev/null 2>&1 || { echo >&2 'Error: Doxygen not fount'; exit 1; }" \
-    } }}
+    command -v doxygen >/dev/null 2>&1 || { echo >&2 'Error: Doxygen not fount'; exit 1; }
 
     @echo "Preparing directories..."
-    {{ if os() == "windows" { \
-        "powershell -Command \"if (!(Test-Path " + docs_out + ")) { New-Item -ItemType Directory -Force -Path " + docs_out + " }\"" \
-    } else { \
-        "mkdir -p " + docs_out \
-    } }}
-    
+    mkdir -p {{docs_out}}
+
     @echo "Generatins temporary config file for Doxygen..."
     @doxygen -g - > Doxyfile_temp
-    
+
     @echo "PROJECT_NAME = {{project_name}}" >> Doxyfile_temp
     @echo "OUTPUT_DIRECTORY = {{docs_out}}" >> Doxyfile_temp
     @echo "INPUT = {{docs_input}}" >> Doxyfile_temp
@@ -96,14 +95,39 @@ docs:
     @echo "EXTRACT_ALL = YES" >> Doxyfile_temp
     @echo "EXTRACT_STATIC = YES" >> Doxyfile_temp
     @echo "SHOW_FILES = YES" >> Doxyfile_temp
-    
-    @{{ if os() == "windows" { \
-        "where dot >$null 2>&1 && (echo HAVE_DOT = YES >> Doxyfile_temp && echo CALL_GRAPH = YES >> Doxyfile_temp && echo INTERACTIVE_SVG = YES >> Doxyfile_temp) || echo 'Warning: Graphviz not found'" \
-    } else { \
-        "command -v dot >/dev/null 2>&1 && { echo 'HAVE_DOT = YES'; echo 'CALL_GRAPH = YES'; echo 'INTERACTIVE_SVG = YES'; } >> Doxyfile_temp || echo 'Warning: Graphviz not found'" \
-    } }}
+
+    @command -v dot >/dev/null 2>&1 && { echo 'HAVE_DOT = YES'; echo 'CALL_GRAPH = YES'; echo 'INTERACTIVE_SVG = YES'; } >> Doxyfile_temp || echo 'Warning: Graphviz not found'
 
     @echo "Executing Doxygen..."
     @doxygen Doxyfile_temp
-    {{ if os() == "windows" { "rm Doxyfile_temp" } else { "rm Doxyfile_temp" } }}
+    rm Doxyfile_temp
+    @echo "Docs generated in: {{docs_out}}/html/index.html"
+
+[windows]
+docs:
+    @echo "Verifing tools..."
+    where doxygen >$null 2>&1 || (echo Error: Doxygen not found && exit 1)
+
+    @echo "Preparing directories..."
+    powershell -Command "if (!(Test-Path {{docs_out}})) { New-Item -ItemType Directory -Force -Path {{docs_out}} }"
+
+    @echo "Generatins temporary config file for Doxygen..."
+    @doxygen -g - > Doxyfile_temp
+
+    @echo "PROJECT_NAME = {{project_name}}" >> Doxyfile_temp
+    @echo "OUTPUT_DIRECTORY = {{docs_out}}" >> Doxyfile_temp
+    @echo "INPUT = {{docs_input}}" >> Doxyfile_temp
+    @echo "RECURSIVE = YES" >> Doxyfile_temp
+    @echo "GENERATE_HTML = YES" >> Doxyfile_temp
+    @echo "HTML_OUTPUT = html" >> Doxyfile_temp
+    @echo "USE_MDFILE_AS_MAINPAGE = README.md" >> Doxyfile_temp
+    @echo "EXTRACT_ALL = YES" >> Doxyfile_temp
+    @echo "EXTRACT_STATIC = YES" >> Doxyfile_temp
+    @echo "SHOW_FILES = YES" >> Doxyfile_temp
+
+    @where dot >$null 2>&1 && (echo HAVE_DOT = YES >> Doxyfile_temp && echo CALL_GRAPH = YES >> Doxyfile_temp && echo INTERACTIVE_SVG = YES >> Doxyfile_temp) || echo Warning: Graphviz not found
+
+    @echo "Executing Doxygen..."
+    @doxygen Doxyfile_temp
+    rm Doxyfile_temp
     @echo "Docs generated in: {{docs_out}}/html/index.html"
