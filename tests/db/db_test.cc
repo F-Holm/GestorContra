@@ -1,9 +1,12 @@
 #include "db/db.h"
 
 #include <gtest/gtest.h>
+#include <sqlite3.h>
 
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 
 #include "types/account_binary.h"
 
@@ -48,6 +51,39 @@ TEST_F(DBTest, OpenCreatesEmptyDatabase) {
   EXPECT_EQ(db.Count(), 0u);
 }
 
+TEST_F(DBTest, OpenFailsForUnreachablePath) {
+  DB db;
+  EXPECT_FALSE(db.Open("/nonexistent_dir_xyz/unreachable.sqlite3"));
+  EXPECT_FALSE(db.IsOpen());
+}
+
+TEST_F(DBTest, OpenFailsWhenSchemaCannotBeWritten) {
+  {
+    std::ofstream ofs(test_file, std::ios::binary | std::ios::trunc);
+  }
+  std::filesystem::permissions(test_file, std::filesystem::perms::owner_read);
+
+  DB db;
+  EXPECT_FALSE(db.Open(test_file));
+  EXPECT_FALSE(db.IsOpen());
+
+  std::filesystem::permissions(test_file, std::filesystem::perms::owner_all);
+}
+
+TEST_F(DBTest, OperationsFailWhenDatabaseNotOpen) {
+  DB db;
+  ASSERT_FALSE(db.IsOpen());
+
+  EXPECT_FALSE(db.AddAccount(MakeAccount(std::byte{0x01})));
+  EXPECT_FALSE(db.GetAccount(0).has_value());
+  EXPECT_FALSE(db.UpdateAccount(0, MakeAccount(std::byte{0x01})));
+  EXPECT_FALSE(db.DeleteAccount(0));
+  EXPECT_FALSE(db.MoveAccount(0, 1));
+  EXPECT_TRUE(db.GetAllIndex().empty());
+  EXPECT_EQ(db.Count(), 0u);
+  EXPECT_FALSE(db.Compact());
+}
+
 TEST_F(DBTest, AddAndGetAccount) {
   DB db;
   ASSERT_TRUE(db.Open(test_file));
@@ -69,6 +105,25 @@ TEST_F(DBTest, AddAndGetAccount) {
 TEST_F(DBTest, GetMissingAccountReturnsNullopt) {
   DB db;
   ASSERT_TRUE(db.Open(test_file));
+  EXPECT_FALSE(db.GetAccount(0).has_value());
+}
+
+TEST_F(DBTest, GetAccountReturnsNulloptWhenBlobIsCorrupted) {
+  DB db;
+  ASSERT_TRUE(db.Open(test_file));
+  ASSERT_TRUE(db.AddAccount(MakeAccount(std::byte{0x01})));
+
+  // Simulate on-disk corruption (or tampering) by rewriting a blob column to
+  // the wrong length through a second raw connection to the same file.
+  sqlite3* raw = nullptr;
+  ASSERT_EQ(sqlite3_open(test_file.c_str(), &raw), SQLITE_OK);
+  ASSERT_EQ(sqlite3_exec(raw,
+                         "UPDATE accounts SET description = X'00' "
+                         "WHERE position = 0;",
+                         nullptr, nullptr, nullptr),
+            SQLITE_OK);
+  sqlite3_close(raw);
+
   EXPECT_FALSE(db.GetAccount(0).has_value());
 }
 
@@ -166,6 +221,18 @@ TEST_F(DBTest, MoveAccountBackward) {
   EXPECT_EQ(db.GetAccount(3)->description[0], std::byte{0x03});
 }
 
+TEST_F(DBTest, MoveAccountToSamePositionIsNoop) {
+  DB db;
+  ASSERT_TRUE(db.Open(test_file));
+  ASSERT_TRUE(db.AddAccount(MakeAccount(std::byte{0x01})));
+  ASSERT_TRUE(db.AddAccount(MakeAccount(std::byte{0x02})));
+
+  EXPECT_TRUE(db.MoveAccount(1, 1));
+
+  EXPECT_EQ(db.GetAccount(0)->description[0], std::byte{0x01});
+  EXPECT_EQ(db.GetAccount(1)->description[0], std::byte{0x02});
+}
+
 TEST_F(DBTest, MoveAccountOutOfRangeFails) {
   DB db;
   ASSERT_TRUE(db.Open(test_file));
@@ -173,6 +240,14 @@ TEST_F(DBTest, MoveAccountOutOfRangeFails) {
 
   EXPECT_FALSE(db.MoveAccount(0, 5));
   EXPECT_FALSE(db.MoveAccount(-1, 0));
+}
+
+TEST_F(DBTest, MoveAccountFromMissingPositionFails) {
+  DB db;
+  ASSERT_TRUE(db.Open(test_file));
+  ASSERT_TRUE(db.AddAccount(MakeAccount(std::byte{0x01})));
+
+  EXPECT_FALSE(db.MoveAccount(50, 0));
 }
 
 TEST_F(DBTest, GetAllIndexReturnsOrderedEntries) {
@@ -205,6 +280,31 @@ TEST_F(DBTest, CompactKeepsDataIntact) {
   EXPECT_EQ(db.Count(), 1u);
   ASSERT_TRUE(db.GetAccount(0).has_value());
   EXPECT_EQ(db.GetAccount(0)->description[0], std::byte{0x02});
+}
+
+TEST_F(DBTest, OperationsFailGracefullyIfSchemaIsCorrupted) {
+  DB db;
+  ASSERT_TRUE(db.Open(test_file));
+  ASSERT_TRUE(db.AddAccount(MakeAccount(std::byte{0x01})));
+
+  // Simulate the vault file being tampered with (or corrupted) externally:
+  // drop the table out from under a live DB instance via a second raw
+  // connection, then verify every operation fails cleanly instead of
+  // crashing on an unpreparable statement.
+  sqlite3* raw = nullptr;
+  ASSERT_EQ(sqlite3_open(test_file.c_str(), &raw), SQLITE_OK);
+  ASSERT_EQ(
+      sqlite3_exec(raw, "DROP TABLE accounts;", nullptr, nullptr, nullptr),
+      SQLITE_OK);
+  sqlite3_close(raw);
+
+  EXPECT_FALSE(db.AddAccount(MakeAccount(std::byte{0x02})));
+  EXPECT_FALSE(db.GetAccount(0).has_value());
+  EXPECT_FALSE(db.UpdateAccount(0, MakeAccount(std::byte{0x02})));
+  EXPECT_FALSE(db.DeleteAccount(0));
+  EXPECT_FALSE(db.MoveAccount(0, 1));
+  EXPECT_TRUE(db.GetAllIndex().empty());
+  EXPECT_EQ(db.Count(), 0u);
 }
 
 TEST_F(DBTest, PersistenceBetweenSessions) {
