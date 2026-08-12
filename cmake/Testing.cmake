@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 include(Dependencies)
 include(FetchContent)
 FetchContent_Declare(

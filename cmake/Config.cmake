@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 macro(ConfigModule target)
     AddCppCheck("${target}")
     AddClangTidy("${target}")

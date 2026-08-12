@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 if (ENABLE_LINT)
     if (WIN32)
         find_program(CPPCHECK_PATH

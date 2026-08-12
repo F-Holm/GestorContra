@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 function(AddASanInstrumentation)
     if(ENABLE_ASAN)
         if(WIN32)

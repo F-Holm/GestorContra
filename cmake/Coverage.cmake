@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 set(COVERAGE_SUPPORTED FALSE)
 
 if(NOT ENABLE_COVERAGE)

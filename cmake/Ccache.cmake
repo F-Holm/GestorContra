@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 if(ENABLE_CCACHE)
     find_program(CCACHE_BIN ccache)
     if(CCACHE_BIN)

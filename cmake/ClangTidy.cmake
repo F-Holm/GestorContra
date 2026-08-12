@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 if (ENABLE_LINT)
     find_program(CLANG-TIDY_PATH clang-tidy)
     if(NOT CLANG-TIDY_PATH)

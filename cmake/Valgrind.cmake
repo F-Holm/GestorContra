@@ -1,4 +1,6 @@
-if (ENABLE_MEMCHECK   OR 
+include_guard(GLOBAL)
+
+if (ENABLE_MEMCHECK   OR
     ENABLE_HELGRIND   OR 
     ENABLE_DRD        OR 
     ENABLE_MASSIF     OR 
