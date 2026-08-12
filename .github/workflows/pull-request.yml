@@ -15,11 +15,11 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            env_flags: "0 1 ASAN"
+            env_flags: "LINT ASAN"
           - os: windows-latest
-            env_flags: "0 0 ASAN"
+            env_flags: "ASAN"
           - os: macos-latest
-            env_flags: "0 0 ASAN"
+            env_flags: "ASAN"
 
     steps:
       - name: Checkout code
