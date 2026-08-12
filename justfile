@@ -11,11 +11,9 @@ build-install-ci: config build test install package
 config:
     cmake --preset release
 
-config-dev coverage="0" lint="0" *analyzers:
+config-dev *flags:
     cmake --preset debug \
-          -DENABLE_COVERAGE={{ if coverage == "1" { "ON" } else { "OFF" } }} \
-          -DENABLE_LINT={{ if lint == "1" { "ON" } else { "OFF" } }} \
-          {{ if analyzers == "" { "" } else { "-DENABLE_" + replace(analyzers, " ", "=ON -DENABLE_") + "=ON" } }}
+          {{ if flags == "" { "" } else { "-DENABLE_" + replace(flags, " ", "=ON -DENABLE_") + "=ON" } }}
 
 build:
     cmake --build --preset build-release --parallel {{ num_cpus() }}

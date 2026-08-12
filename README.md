@@ -52,7 +52,7 @@ just build-install
 | `just build-install-ci` | Full pipeline: Configures, builds, test, and installs the **Release** version. |
 | `just config` | Configures the project with the **Release** preset. |
 | `just config-dev` | Configures the project with the **Debug** preset. |
-| `just config-dev [coverage] [lint] [ANALYZERS...]` | Configures the project with the **Debug** preset and optional instrumentation. |
+| `just config-dev [FLAGS...]` | Configures the project with the **Debug** preset and optional instrumentation. |
 | `just build` | Compiles the project in **Release** mode. |
 | `just build-dev` | Compiles the project in **Debug** mode. |
 | `just install` | Installs the **Release** binaries in the `install` folder. |
@@ -75,22 +75,23 @@ When running `just config-dev`, you can enable code coverage, static analysis (l
 
 ### Usage
 ```bash
-just config-dev [coverage] [lint] [ANALYZERS...]
+just config-dev [FLAGS...]
 ```
-- `coverage`: `1` to enable, `0` to disable (default: `0`).
-- `lint`: `1` to enable, `0` to disable (default: `0`).
-- `ANALYZERS...`: A space-separated list of analyzers in **UPPERCASE** (can receive 0, 1, or multiple tools).
+- `FLAGS...`: A space-separated list of flags in **UPPERCASE** (can receive 0, 1, or multiple). Each flag `X` maps directly to CMake's `-DENABLE_X=ON`; a flag that isn't passed stays at its default (`OFF`).
 
-### Available Analyzers
+### Available Flags
 
-| Sanitizer | Valgrind Tools |
+| Category | Flags |
 | :--- | :--- |
-| `ASAN` (AddressSanitizer) | `MEMCHECK`, `HELGRIND`, `DRD`, `MASSIF`, `CACHEGRIND`, `CALLGRIND`, `DHAT`, `LACKEY`, `NULGRIND` |
+| Instrumentation | `LINT`, `COVERAGE` |
+| Sanitizer | `ASAN` (AddressSanitizer) |
+| Valgrind Tools | `MEMCHECK`, `HELGRIND`, `DRD`, `MASSIF`, `CACHEGRIND`, `CALLGRIND`, `DHAT`, `LACKEY`, `NULGRIND` |
 
 > ⚠️ **Important:**
 > - If any Valgrind tool is enabled, individual CTest targets are registered automatically for each tool under the same test executable.
-> - Passing an invalid or misspelled analyzer name will trigger a Warning during the CMake configuration step.
+> - Passing an invalid or misspelled flag name will trigger a Warning during the CMake configuration step.
 > - Valgrand tools are incompatible with ASan.
+> - Flags aren't reset by omission on an existing build directory: once enabled, a flag stays `ON` in the CMake cache until you explicitly reconfigure with a fresh build directory or pass it again some other way.
 
 ### Examples
 
@@ -101,10 +102,10 @@ just config-dev
 
 **2. Enable Linting and AddressSanitizer:**
 ```bash
-just config-dev 0 1 ASAN
+just config-dev LINT ASAN
 ```
 
 **3. Run a comprehensive Valgrind Suite (Memcheck + Helgrind) with Coverage enabled:**
 ```bash
-just config-dev 1 0 MEMCHECK HELGRIND
+just config-dev COVERAGE MEMCHECK HELGRIND
 ```
