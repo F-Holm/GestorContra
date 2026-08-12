@@ -4,6 +4,7 @@ FetchContent_Declare(
     googletest
     GIT_REPOSITORY ${GOOGLETEST_GIT_REPOSITORY}
     GIT_TAG ${GOOGLETEST_GIT_TAG}
+    SYSTEM
 )
 # For Windows: Prevent overriding the parent project's
 # compiler/linker settings
