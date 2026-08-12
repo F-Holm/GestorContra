@@ -1,4 +1,4 @@
-use aes_gcm::aead::AeadInPlace;
+use aes_gcm::aead::AeadInOut;
 use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce, Tag};
 use argon2::Argon2;
 use sha3::{Digest, Sha3_256, Sha3_512};
@@ -73,10 +73,11 @@ pub unsafe extern "C" fn encrypt_aes_gcm_256(
     };
     let data_slice = unsafe { slice::from_raw_parts_mut(data, data_len) };
 
-    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key_slice));
-    let nonce = Nonce::from_slice(iv_slice);
+    let key_array = Key::<Aes256Gcm>::try_from(key_slice).expect("key_slice is AES256_KEY_SIZE");
+    let cipher = Aes256Gcm::new(&key_array);
+    let nonce = Nonce::try_from(iv_slice).expect("iv_slice is AES256_IV_SIZE");
 
-    match cipher.encrypt_in_place_detached(nonce, aad_slice, data_slice) {
+    match cipher.encrypt_inout_detached(&nonce, aad_slice, data_slice.into()) {
         Ok(tag) => {
             let out_tag = unsafe { slice::from_raw_parts_mut(tag_out, AES256_TAG_SIZE) };
             out_tag.copy_from_slice(&tag);
@@ -113,12 +114,13 @@ pub unsafe extern "C" fn decrypt_aes_gcm_256(
     let tag_slice = unsafe { slice::from_raw_parts(tag, AES256_TAG_SIZE) };
     let data_slice = unsafe { slice::from_raw_parts_mut(data, data_len) };
 
-    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key_slice));
-    let nonce = Nonce::from_slice(iv_slice);
-    let gcm_tag = Tag::from_slice(tag_slice);
+    let key_array = Key::<Aes256Gcm>::try_from(key_slice).expect("key_slice is AES256_KEY_SIZE");
+    let cipher = Aes256Gcm::new(&key_array);
+    let nonce = Nonce::try_from(iv_slice).expect("iv_slice is AES256_IV_SIZE");
+    let gcm_tag = Tag::try_from(tag_slice).expect("tag_slice is AES256_TAG_SIZE");
 
     cipher
-        .decrypt_in_place_detached(nonce, aad_slice, data_slice, gcm_tag)
+        .decrypt_inout_detached(&nonce, aad_slice, data_slice.into(), &gcm_tag)
         .is_ok()
 }
 
