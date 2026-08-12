@@ -11,6 +11,7 @@ function(AddClangTidy target)
     if(ENABLE_LINT AND CLANG-TIDY_PATH)
         set_target_properties("${target}"
             PROPERTIES
+            C_CLANG_TIDY "${CLANG-TIDY_PATH}"
             CXX_CLANG_TIDY "${CLANG-TIDY_PATH}"
         )
     endif()
