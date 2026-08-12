@@ -1,29 +1,42 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <optional>
+#include <string_view>
+#include <vector>
 
-#include "db/storage.h"
 #include "types/account_binary.h"
 #include "types/account_index.h"
-#include "types/account_size.h"
+
+struct sqlite3;
 
 class DB {
  public:
-  void Open();
-  void Close();
-
-  AccountIndex SwapIndex(std::uint32_t elem1, std::uint32_t elem2);
-  AccountIndex GetAllIndex();
-  void AddAccount(const AccountBinary& account);
-  AccountBinary GetAccount(std::uint32_t pos);
-  void UpdateAccount(std::uint32_t pos, const AccountBinary& account);
-  void DeleteAccount(std::uint32_t pos);
-  void Compact();
-
-  DB();
+  DB() noexcept;
   ~DB();
 
+  DB(const DB&) = delete;
+  DB& operator=(const DB&) = delete;
+  DB(DB&&) = delete;
+  DB& operator=(DB&&) = delete;
+
+  bool Open(std::string_view path);
+  void Close();
+  bool IsOpen() const noexcept;
+
+  bool AddAccount(const AccountBinary& account);
+  std::optional<AccountBinary> GetAccount(std::int64_t position);
+  bool UpdateAccount(std::int64_t position, const AccountBinary& account);
+  bool DeleteAccount(std::int64_t position);
+  bool MoveAccount(std::int64_t from_position, std::int64_t to_position);
+  std::vector<AccountIndex> GetAllIndex();
+  std::size_t Count();
+  bool Compact();
+
  private:
-  Storage<AccountBinary> vault;
-  Storage<AccountIndex> account_index;
+  sqlite3* db_;
+
+  bool CreateSchema();
+  bool Execute(std::string_view sql);
 };
