@@ -1,9 +1,12 @@
+include_guard(GLOBAL)
+
+include(Dependencies)
 include(FetchContent)
 
 FetchContent_Declare(
   corrosion
-  GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
-  GIT_TAG v0.6.1
+  GIT_REPOSITORY ${CORROSION_GIT_REPOSITORY}
+  GIT_TAG ${CORROSION_GIT_TAG}
 )
 
 FetchContent_MakeAvailable(corrosion)

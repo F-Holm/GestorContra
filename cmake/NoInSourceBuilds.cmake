@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
     message(FATAL_ERROR
         "\n"
