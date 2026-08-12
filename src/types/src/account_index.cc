@@ -37,6 +37,6 @@ void AccountIndex::SetZero() noexcept {
 }
 
 AccountIndex::~AccountIndex() noexcept {
-  this->SetZero();
-  position = 0;
+  Crypto::SecureClear(
+      std::span{reinterpret_cast<std::byte*>(this), sizeof(*this)});
 }
